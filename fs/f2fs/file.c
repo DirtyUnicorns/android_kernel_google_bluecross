@@ -282,7 +282,9 @@ go_write:
 		goto out;
 	}
 sync_nodes:
+	atomic_inc(&sbi->wb_sync_req[NODE]);
 	ret = f2fs_fsync_node_pages(sbi, inode, &wbc, atomic);
+	atomic_dec(&sbi->wb_sync_req[NODE]);
 	if (ret) {
 		f2fs_msg(sbi->sb, KERN_WARNING,
 				"fsync_node_pages failed %d dsync=%d atomic=%d",
