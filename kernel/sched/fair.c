@@ -6909,35 +6909,6 @@ static bool is_packing_eligible(struct task_struct *p, int target_cpu,
 	return (estimated_capacity <= capacity_curr_of(target_cpu));
 }
 
-static inline bool skip_sg(struct task_struct *p, struct sched_group *sg,
-			   struct cpumask *rtg_target,
-			   unsigned long target_capacity)
-{
-	int fcpu = group_first_cpu(sg);
-
-	/* Are all CPUs isolated in this group? */
-	if (!sg->group_weight)
-		return true;
-
-	/*
-	 * Don't skip a group if a task affinity allows it
-	 * to run only on that group.
-	 */
-	if (cpumask_subset(tsk_cpus_allowed(p), sched_group_cpus(sg)))
-		return false;
-	/*
-	 * if we have found a target cpu within a group, don't bother checking
-	 * other groups
-	 */
-	if (target_capacity != ULONG_MAX)
-		return true;
-
-	if (rtg_target && !cpumask_test_cpu(fcpu, rtg_target))
-		return true;
-
-	return false;
-}
-
 static int start_cpu(struct task_struct *p, bool boosted,
 		     struct cpumask *rtg_target)
 {
@@ -7017,9 +6988,6 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 	do {
 		cpumask_t search_cpus;
 		bool do_rotate = false, avoid_prev_cpu = false;
-
-		if (skip_sg(p, sg, fbt_env->rtg_target, target_capacity))
-			continue;
 
 		cpumask_copy(&search_cpus, tsk_cpus_allowed(p));
 		cpumask_and(&search_cpus, &search_cpus, sched_group_cpus(sg));
@@ -7296,6 +7264,13 @@ retry:
 
 			target_capacity = ULONG_MAX;
 		}
+		/*
+		 * if we have found a target cpu within a group, don't bother
+		 * checking other groups.
+		 */
+		if (target_capacity != ULONG_MAX)
+			break;
+
 	} while (sg = sg->next, sg != sd->groups);
 
 	if (best_idle_cpu != -1 && !is_packing_eligible(p, target_cpu, fbt_env,
@@ -7427,9 +7402,9 @@ task_is_boosted(struct task_struct *p) {
  * to run on any cpu.
  */
 static inline bool
-cpu_is_in_target_set(struct task_struct *p, int cpu)
+cpu_is_in_target_set(struct task_struct *p, int cpu, struct cpumask *rtg_target)
 {
-	int first_cpu = start_cpu(task_is_boosted(p));
+	int first_cpu = start_cpu(p, task_is_boosted(p), rtg_target);
 	int next_usable_cpu = cpumask_next(first_cpu - 1, tsk_cpus_allowed(p));
 	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
 }
@@ -7448,7 +7423,7 @@ bias_to_prev_cpu(struct task_struct *p, struct cpumask *rtg_target)
 	u64 ms = sched_clock();
 #endif
 
-	if (!cpu_is_in_target_set(p, prev_cpu)) {
+	if (!cpu_is_in_target_set(p, prev_cpu, rtg_target)) {
 		return false;
 	}
 
@@ -7672,7 +7647,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 
 			if (sysctl_sched_sync_hint_enable && sync &&
 			    !_wake_cap && about_to_idle &&
-			    cpu_is_in_target_set(p, cpu))
+			    cpu_is_in_target_set(p, cpu, NULL))
 				return cpu;
 		}
 
@@ -7689,7 +7664,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 		 * that the selection algorithm for a boosted task
 		 * should be used.
 		 */
-		bool sync_boost = sync && cpu >= start_cpu(true);
+		bool sync_boost = sync && cpu >= start_cpu(p, true, NULL);
 
 		return select_energy_cpu_brute(p, prev_cpu, sync_boost);
 	}
