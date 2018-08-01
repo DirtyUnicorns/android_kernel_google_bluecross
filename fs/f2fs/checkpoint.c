@@ -159,11 +159,6 @@ bool f2fs_is_valid_blkaddr(struct f2fs_sb_info *sbi,
 			blkaddr >= MAIN_BLKADDR(sbi)))
 			return false;
 		break;
-	case META_GENERIC:
-		if (unlikely(blkaddr < SEG0_BLKADDR(sbi) ||
-			blkaddr >= MAIN_BLKADDR(sbi)))
-			return false;
-		break;
 	default:
 		BUG();
 	}
