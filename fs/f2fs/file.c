@@ -2799,7 +2799,7 @@ static int f2fs_ioc_enable_verity(struct file *filp, unsigned long arg)
 
 	f2fs_update_time(F2FS_I_SB(inode), REQ_TIME);
 
-	if (!f2fs_sb_has_verity(inode->i_sb)) {
+	if (!f2fs_sb_has_verity(F2FS_I_SB(inode))) {
 		f2fs_msg(inode->i_sb, KERN_WARNING,
 			 "Can't enable fs-verity on inode %lu: the fs-verity feature is disabled on this filesystem.\n",
 			 inode->i_ino);
