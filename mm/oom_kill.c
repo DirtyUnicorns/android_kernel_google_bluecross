@@ -1,6 +1,6 @@
 /*
  *  linux/mm/oom_kill.c
- * 
+ *
  *  Copyright (C)  1998,2000  Rik van Riel
  *	Thanks go out to Claus Fischer for some serious inspiration and
  *	for goading me into coding this file...
@@ -618,8 +618,8 @@ void wake_oom_reaper(struct task_struct *tsk)
 	 * the same task by both OOM killer and LMK.
 	 */
 	spin_lock(&oom_reaper_lock);
-	/* tsk is already queued? */
-	if (tsk == oom_reaper_list || tsk->oom_reaper_list) {
+	/* mm is already queued? */
+	if (test_and_set_bit(MMF_OOM_REAP_QUEUED, &tsk->signal->oom_mm->flags)) {
 		spin_unlock(&oom_reaper_lock);
 		return;
 	}
