@@ -111,7 +111,7 @@ static int psy_changed(struct notifier_block *nb,
 	     (chg_drv->wlc_psy_name &&
 	      !strcmp(psy->desc->name, chg_drv->wlc_psy_name)))) {
 		cancel_delayed_work(&chg_drv->chg_work);
-		schedule_delayed_work(&chg_drv->chg_work, 0);
+		queue_delayed_work(system_power_efficient_wq, &chg_drv->chg_work, 0);
 	}
 	return NOTIFY_OK;
 }
@@ -678,7 +678,7 @@ handle_rerun:
 	if (rerun_work) {
 		pr_debug("rerun battery charging work in %d ms\n",
 			 update_interval);
-		schedule_delayed_work(&chg_drv->chg_work,
+		queue_delayed_work(system_power_efficient_wq, &chg_drv->chg_work,
 				      msecs_to_jiffies(update_interval));
 	} else {
 		pr_info("stop battery charging work: batt_status=%d\n",
@@ -690,7 +690,7 @@ handle_rerun:
 error_rerun:
 	pr_err("error occurred, rerun battery charging work in %d ms\n",
 	       CHG_WORK_ERROR_RETRY_MS);
-	schedule_delayed_work(&chg_drv->chg_work,
+	queue_delayed_work(system_power_efficient_wq, &chg_drv->chg_work,
 			      msecs_to_jiffies(CHG_WORK_ERROR_RETRY_MS));
 
 exit_chg_work:
@@ -1184,12 +1184,12 @@ static void google_charger_init_work(struct work_struct *work)
 	pr_info("google_charger_init_work done\n");
 
 	/* catch state changes that happened before registering the notifier */
-	schedule_delayed_work(&chg_drv->chg_work,
+	queue_delayed_work(system_power_efficient_wq, &chg_drv->chg_work,
 		msecs_to_jiffies(CHG_DELAY_INIT_DETECT_MS));
 	return;
 
 retry_init_work:
-	schedule_delayed_work(&chg_drv->init_work,
+	queue_delayed_work(system_power_efficient_wq, &chg_drv->init_work,
 			      msecs_to_jiffies(CHG_DELAY_INIT_MS));
 }
 
@@ -1291,7 +1291,7 @@ static int google_charger_probe(struct platform_device *pdev)
 	INIT_DELAYED_WORK(&chg_drv->chg_work, chg_work);
 	platform_set_drvdata(pdev, chg_drv);
 
-	schedule_delayed_work(&chg_drv->init_work,
+	queue_delayed_work(system_power_efficient_wq, &chg_drv->init_work,
 			      msecs_to_jiffies(CHG_DELAY_INIT_MS));
 
 	return 0;

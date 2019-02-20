@@ -1967,7 +1967,7 @@ static void max1720x_init_work(struct work_struct *work)
 	int ret = max1720x_init_chip(chip);
 
 	if (ret == -EPROBE_DEFER) {
-		schedule_delayed_work(&chip->init_work,
+		queue_delayed_work(system_power_efficient_wq, &chip->init_work,
 				      msecs_to_jiffies(MAX1720X_DELAY_INIT_MS));
 		return;
 	}
@@ -2055,7 +2055,7 @@ static int max1720x_probe(struct i2c_client *client,
 
 	INIT_WORK(&chip->cycle_count_work, max1720x_cycle_count_work);
 	INIT_DELAYED_WORK(&chip->init_work, max1720x_init_work);
-	schedule_delayed_work(&chip->init_work,
+	queue_delayed_work(system_power_efficient_wq, &chip->init_work,
 			      msecs_to_jiffies(MAX1720X_DELAY_INIT_MS));
 
 	return 0;
