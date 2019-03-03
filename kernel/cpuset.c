@@ -1795,6 +1795,10 @@ static ssize_t cpuset_write_cpus_resmask(struct kernfs_open_file *of,
 	char adj_cpulist[NR_CPUS * 2 + 1];
 	BUILD_BUG_ON(NR_CPUS >= 10);
 
+	/* Restrict top-app to two gold CPUs */
+	if (!memcmp(of->kn->parent->name, "top-app", sizeof("top-app")))
+		buf = "4-5";
+
 	/*
 	 * Adjust the requested cpuset to only use online CPUs. This is useful
 	 * for the assumption that CPUs which aren't online right now will never
