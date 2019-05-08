@@ -2205,17 +2205,19 @@ reinit:
 	}
 
 	/*
-	 * If cache size is higher than 0, this indicates
-	 * the existence of cache and it can be turned on.
-	 * If HPI is not supported then cache shouldn't be enabled.
+	 * If cache size is higher than 0, this indicates the existence of cache
+	 * and it can be turned on. Note that some eMMCs from Micron has been
+	 * reported to need ~800 ms timeout, while enabling the cache after
+	 * sudden power failure tests. Let's extend the timeout to a minimum of
+	 * DEFAULT_CACHE_EN_TIMEOUT_MS and do it for all cards.
 	 */
-	if (!mmc_card_broken_hpi(card) &&
-	    card->ext_csd.cache_size > 0) {
-		if (card->ext_csd.hpi_en &&
-			(!(card->quirks & MMC_QUIRK_CACHE_DISABLE))) {
+	if (card->ext_csd.cache_size > 0) {
+		unsigned int timeout_ms = MIN_CACHE_EN_TIMEOUT_MS;
+
+		timeout_ms = max(card->ext_csd.generic_cmd6_time, timeout_ms);
+		if (!(card->quirks & MMC_QUIRK_CACHE_DISABLE)) {
 			err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
-					EXT_CSD_CACHE_CTRL, 1,
-					card->ext_csd.generic_cmd6_time);
+					EXT_CSD_CACHE_CTRL, 1, timeout_ms);
 			if (err && err != -EBADMSG) {
 				pr_err("%s: %s: fail on CACHE_CTRL ON %d\n",
 					mmc_hostname(host), __func__, err);
@@ -2233,12 +2235,12 @@ reinit:
 			} else {
 				card->ext_csd.cache_ctrl = 1;
 			}
+
 			/* enable cache barrier if supported by the device */
 			if (card->ext_csd.cache_ctrl &&
 					card->ext_csd.barrier_support) {
 				err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
-					EXT_CSD_BARRIER_CTRL, 1,
-					card->ext_csd.generic_cmd6_time);
+					EXT_CSD_BARRIER_CTRL, 1, timeout_ms);
 				if (err && err != -EBADMSG) {
 					pr_err("%s: %s: mmc_switch() for BARRIER_CTRL fails %d\n",
 						mmc_hostname(host), __func__,
@@ -2264,8 +2266,7 @@ reinit:
 			 * we want to avoid cache.
 			 */
 			err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
-					EXT_CSD_CACHE_CTRL, 0,
-					card->ext_csd.generic_cmd6_time);
+					EXT_CSD_CACHE_CTRL, 0, timeout_ms);
 			if (err) {
 				pr_err("%s: %s: fail on CACHE_CTRL OFF %d\n",
 					mmc_hostname(host), __func__, err);
@@ -2273,6 +2274,7 @@ reinit:
 			}
 		}
 	}
+
 	/*
 	 * The mandatory minimum values are defined for packed command.
 	 * read: 5, write: 3

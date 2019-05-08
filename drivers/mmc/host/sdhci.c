@@ -1153,6 +1153,8 @@ static void sdhci_finish_data(struct sdhci_host *host)
 		sdhci_do_reset(host, SDHCI_RESET_DATA);
 	}
 
+	MMC_TRACE(host->mmc, "%s: 0x24=0x%08x\n", __func__,
+		sdhci_readl(host, SDHCI_PRESENT_STATE));
 	if ((host->flags & (SDHCI_REQ_USE_DMA | SDHCI_USE_ADMA)) ==
 	    (SDHCI_REQ_USE_DMA | SDHCI_USE_ADMA))
 		sdhci_adma_table_post(host, data);
