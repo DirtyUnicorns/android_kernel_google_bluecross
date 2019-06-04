@@ -145,7 +145,21 @@ static const struct snd_kcontrol_new name##_mux = \
 #define  CF_MIN_3DB_150HZ		0x2
 
 #define CPE_ERR_WDOG_BITE BIT(0)
-#define CPE_FATAL_IRQS CPE_ERR_WDOG_BITE
+#define CPE_ERR_BUFFER_OVERFLOW BIT(1)
+#define CPE_ERR_LAB_OVFUNF_ERR BIT(2)
+#define CPE_ERR_US_BUF_OVFUNF BIT(3)
+#define CPE_ERR_SPI_SLAVE_ERR BIT(4)
+#define CPE_ERR_MPU_ERR BIT(5)
+#define CPE_ERR_AUDIO_DMA_ERR BIT(6)
+#define CPE_ERR_DSP_BUS_INVALID_ADDR BIT(8)
+#define CPE_ERR_DSP_BUS_INVALID_MEM_ACC_ERR BIT(9)
+#define CPE_ERR_DSP_BUS_INVALID_XFER_TYPE_ERR BIT(10)
+#define CPE_ERR_AHB_BUS_INVALID_ADDR_ERR BIT(11)
+#define CPE_ERR_AHB_BUS_INVALID_MEM_ACC_ERR BIT(12)
+#define CPE_ERR_AHB_BUS_INVALID_XFER_TYPE_ERR BIT(13)
+#define CPE_FATAL_IRQS \
+	(CPE_ERR_WDOG_BITE | CPE_ERR_BUFFER_OVERFLOW | \
+	CPE_ERR_DSP_BUS_INVALID_ADDR)
 
 #define WCD934X_MAD_AUDIO_FIRMWARE_PATH "wcd934x/wcd934x_mad_audio.bin"
 
@@ -2121,7 +2135,7 @@ static int tavil_codec_enable_spkr_anc(struct snd_soc_dapm_widget *w,
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		ret = tavil_codec_enable_anc(w, kcontrol, event);
-		queue_delayed_work(system_power_efficient_wq, &tavil->spk_anc_dwork.dwork,
+		schedule_delayed_work(&tavil->spk_anc_dwork.dwork,
 				      msecs_to_jiffies(spk_anc_en_delay));
 		break;
 	case SND_SOC_DAPM_POST_PMD:
@@ -4504,11 +4518,11 @@ static int tavil_codec_enable_dec(struct snd_soc_dapm_widget *w,
 			snd_soc_update_bits(codec, hpf_gate_reg, 0x02, 0x00);
 		}
 		/* schedule work queue to Remove Mute */
-		queue_delayed_work(system_power_efficient_wq, &tavil->tx_mute_dwork[decimator].dwork,
+		schedule_delayed_work(&tavil->tx_mute_dwork[decimator].dwork,
 				      msecs_to_jiffies(tx_unmute_delay));
 		if (tavil->tx_hpf_work[decimator].hpf_cut_off_freq !=
 							CF_MIN_3DB_150HZ)
-			queue_delayed_work(system_power_efficient_wq,
+			schedule_delayed_work(
 					&tavil->tx_hpf_work[decimator].dwork,
 					msecs_to_jiffies(300));
 		/* apply gain after decimator is enabled */
@@ -9049,7 +9063,7 @@ static int tavil_dig_core_power_collapse(struct tavil_priv *tavil,
 
 	if (req_state == POWER_COLLAPSE) {
 		if (tavil->power_active_ref == 0) {
-			queue_delayed_work(system_power_efficient_wq, &tavil->power_gate_work,
+			schedule_delayed_work(&tavil->power_gate_work,
 			msecs_to_jiffies(dig_core_collapse_timer * 1000));
 		}
 	} else if (req_state == POWER_RESUME) {
