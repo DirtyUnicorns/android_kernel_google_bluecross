@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.9.188 Kernel Configuration
+# Linux/arm64 4.9.189 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -2096,6 +2096,7 @@ CONFIG_INPUT_DRV2624_HAPTICS=y
 # STMicro rainbow sensor support
 #
 CONFIG_INPUT_VD6281=y
+
 #
 # FingerprintCard fingerprint driver
 #
@@ -2655,6 +2656,7 @@ CONFIG_THERMAL_QPNP=y
 # CONFIG_GENERIC_ADC_THERMAL is not set
 CONFIG_THERMAL_QPNP_ADC_TM=y
 CONFIG_THERMAL_TSENS=y
+
 #
 # Qualcomm thermal drivers
 #
@@ -4212,6 +4214,7 @@ CONFIG_HWSPINLOCK=y
 #
 # CONFIG_HWSPINLOCK_QCOM is not set
 CONFIG_REMOTE_SPINLOCK_MSM=y
+
 #
 # Clock Source drivers
 #
