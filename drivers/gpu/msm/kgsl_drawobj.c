@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2017,2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -273,8 +273,6 @@ static void drawobj_destroy_sync(struct kgsl_drawobj *drawobj)
 
 		/*
 		 * Don't do anything if the event has already expired.
-		 * If this thread clears the pending bit mask then it is
-		 * responsible for doing context put.
 		 */
 		if (!test_and_clear_bit(i, &syncobj->pending))
 			continue;
@@ -284,9 +282,10 @@ static void drawobj_destroy_sync(struct kgsl_drawobj *drawobj)
 			kgsl_cancel_event(drawobj->device,
 				&event->context->events, event->timestamp,
 				drawobj_sync_func, event);
+
 			/*
-			 * Do context put here to make sure the context is alive
-			 * till this thread cancels kgsl event.
+			 * Since this thread clears the pending bit mask, it is
+			 * responsible for doing context put.
 			 */
 			kgsl_context_put(event->context);
 			break;
