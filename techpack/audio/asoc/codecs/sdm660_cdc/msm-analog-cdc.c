@@ -2677,7 +2677,7 @@ static int msm_anlg_cdc_codec_micbias_control(struct snd_soc_dapm_widget *w,
 			msm_anlg_cdc_mbhc_common_micb_ctrl(codec,
 					MBHC_COMMON_MICB_PRECHARGE,
 					false);
-		} else
+		}
 			msm_anlg_cdc_mbhc_common_micb_ctrl(codec,
 					MBHC_COMMON_MICB_PRECHARGE,
 					true);
