@@ -553,8 +553,6 @@ static u8 encode_bMaxPower(enum usb_device_speed speed,
 {
 	unsigned int val = CONFIG_USB_GADGET_VBUS_DRAW;
 
-	if (!val)
-		return 0;
 	switch (speed) {
 	case USB_SPEED_SUPER:
 		return DIV_ROUND_UP(val, 8);
@@ -887,7 +885,6 @@ static int set_config(struct usb_composite_dev *cdev,
 	struct usb_gadget	*gadget = cdev->gadget;
 	struct usb_configuration *c = NULL;
 	int			result = -EINVAL;
-	unsigned		power = gadget_is_otg(gadget) ? 8 : 100;
 	int			tmp;
 
 	if (number) {
@@ -976,8 +973,6 @@ static int set_config(struct usb_composite_dev *cdev,
 		}
 	}
 
-	/* when we return, be sure our power usage is valid */
-	power = c->MaxPower ? c->MaxPower : CONFIG_USB_GADGET_VBUS_DRAW;
 done:
 	usb_gadget_vbus_draw(gadget, USB_VBUS_DRAW(gadget->speed));
 	if (result >= 0 && cdev->delayed_status)
@@ -2470,7 +2465,6 @@ void composite_resume(struct usb_gadget *gadget)
 	struct usb_function		*f;
 	int				ret;
 	unsigned long			flags;
-	u16				maxpower;
 
 	/* REVISIT:  should we have config level
 	 * suspend/resume callbacks?
@@ -2501,10 +2495,7 @@ void composite_resume(struct usb_gadget *gadget)
 				f->resume(f);
 		}
 
-		maxpower = cdev->config->MaxPower;
-
-		usb_gadget_vbus_draw(gadget, maxpower ?
-			maxpower : CONFIG_USB_GADGET_VBUS_DRAW);
+		usb_gadget_vbus_draw(gadget, USB_VBUS_DRAW(gadget->speed));
 	}
 
 	spin_unlock_irqrestore(&cdev->lock, flags);
