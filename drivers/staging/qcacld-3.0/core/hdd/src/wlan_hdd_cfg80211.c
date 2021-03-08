@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -2098,7 +2098,7 @@ void wlan_hdd_cfg80211_acs_ch_select_evt(hdd_adapter_t *adapter)
 		INIT_DELAYED_WORK(&con_sap_adapter->acs_pending_work,
 				      wlan_hdd_cfg80211_start_pending_acs);
 		/* Lets give 500ms for OBSS + START_BSS to complete */
-		queue_delayed_work(system_power_efficient_wq, &con_sap_adapter->acs_pending_work,
+		schedule_delayed_work(&con_sap_adapter->acs_pending_work,
 							msecs_to_jiffies(500));
 	}
 }
@@ -18388,9 +18388,14 @@ static bool wlan_hdd_reassoc_bssid_hint(hdd_adapter_t *adapter,
 		qdf_mem_copy(wext_state->req_bssId.bytes, bssid,
 			     QDF_MAC_ADDR_SIZE);
 
+		hdd_set_roaming_in_progress(true);
 		*status = hdd_reassoc(adapter, bssid, channel,
 				      CONNECT_CMD_USERSPACE);
 		hdd_debug("hdd_reassoc: status: %d", *status);
+		if (status)
+			hdd_set_roaming_in_progress(false);
+
+		hdd_debug("hdd_reassoc: status: %d", status);
 	}
 	return reassoc;
 }
